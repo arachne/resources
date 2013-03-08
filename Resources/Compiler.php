@@ -66,7 +66,7 @@ class Compiler extends \Nette\Object
 		}
 
 		$output = '';
-		$includedFiles = [];
+		$includedFiles = array();
 		$filters = &$this->{$type . 'Filters'};
 		foreach ($files as $file) {
 			$file = $this->inputDirectory . '/' . $file;
@@ -95,7 +95,7 @@ class Compiler extends \Nette\Object
 		}
 
 		$cacheKey = $this->getCacheKey($files);
-		$this->cache->save($files, $includedFiles, [ \Nette\Caching\Cache::EXPIRE => '+ 1 month' ]);
+		$this->cache->save($files, $includedFiles, array(\Nette\Caching\Cache::EXPIRE => '+ 1 month'));
 		$cacheFile = $this->public->save($cacheKey, $output, $type);
 
 		return $this->public->getUrl() . '/' . pathinfo($cacheFile, PATHINFO_BASENAME) . '?' . $this->getLastModification($includedFiles);

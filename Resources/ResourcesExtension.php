@@ -17,16 +17,16 @@ class ResourcesExtension extends \Nette\Config\CompilerExtension
 {
 
 	/** @var array */
-	public $defaults = [
+	public $defaults = array(
 		'inputDirectory' => NULL,
 		'cacheDirectory' => NULL,
 		'cacheUrl' => NULL,
 		'concatenate' => TRUE,
-		'cssFilters' => [],
-		'jsFilters' => [],
-		'packages' => [],
-		'mapping' => [],
-	];
+		'cssFilters' => array(),
+		'jsFilters' => array(),
+		'packages' => array(),
+		'mapping' => array(),
+	);
 
 	/** @var string[] */
 	protected $filters;
@@ -35,23 +35,23 @@ class ResourcesExtension extends \Nette\Config\CompilerExtension
 	{
 		$builder = $this->getContainerBuilder();
 		$config = $this->getConfig($this->defaults);
-		$this->filters = [];
+		$this->filters = array();
 
 		$builder->addDefinition($this->prefix('loader'))
-			->setClass('Arachne\Resources\ResourcesLoader', [ $config['packages'], $config['mapping'] ])
-			->addSetup('setConcatenate', [ $config['concatenate'] ]);
+			->setClass('Arachne\Resources\ResourcesLoader', array($config['packages'], $config['mapping']))
+			->addSetup('setConcatenate', array($config['concatenate']));
 
 		$builder->addDefinition($this->prefix('compiler'))
-			->setClass('Arachne\Resources\Compiler', [ $config['inputDirectory'] ])
-			->addSetup('setCssFilters', [ $this->prepareFilterServices($config['cssFilters']) ])
-			->addSetup('setJsFilters', [ $this->prepareFilterServices($config['jsFilters']) ]);
+			->setClass('Arachne\Resources\Compiler', array($config['inputDirectory']))
+			->addSetup('setCssFilters', array($this->prepareFilterServices($config['cssFilters'])))
+			->addSetup('setJsFilters', array($this->prepareFilterServices($config['jsFilters'])));
 
 		$builder->addDefinition($this->prefix('cache'))
-			->setClass('Arachne\Resources\PublicCache', [ $config['cacheDirectory'], $config['cacheUrl'] ]);
+			->setClass('Arachne\Resources\PublicCache', array($config['cacheDirectory'], $config['cacheUrl']));
 
 		if ($builder->hasDefinition('nette.latte')) {
 			$builder->getDefinition('nette.latte')
-				->addSetup('Arachne\Resources\ResourcesMacros::install(?->getCompiler())', [ '@self' ]);
+				->addSetup('Arachne\Resources\ResourcesMacros::install(?->getCompiler())', array('@self'));
 		}
 	}
 

@@ -57,7 +57,7 @@ class ResourcesLoader extends \Nette\Object
 			}
 			$pos = strrpos($action, ':');
 			if ($pos === FALSE) {
-				return [];
+				return array();
 			}
 			$action = substr($action, 0, $pos);
 		} while (TRUE);
@@ -82,12 +82,12 @@ class ResourcesLoader extends \Nette\Object
 	protected function createTag($url, $type)
 	{
 		if ($type === 'js') {
-			return \Nette\Utils\Html::el('script', [ 'src' => $url ]);
+			return \Nette\Utils\Html::el('script', array('src' => $url));
 		} else {
-			return \Nette\Utils\Html::el('link', [
+			return \Nette\Utils\Html::el('link', array(
 				'rel' => 'stylesheet',
 				'href' => $url,
-			]);
+			));
 		}
 	}
 
@@ -100,10 +100,10 @@ class ResourcesLoader extends \Nette\Object
 		$packages = $this->getPackagesNames($action);
 
 		// Get files form packages
-		$files = [
-			'css' => [],
-			'js' => [],
-		];
+		$files = array( 
+			'css' => array(),
+			'js' => array(),
+		);
 		foreach ($packages as $name) {
 			if (!isset($this->packages[$name])) {
 				throw new InvalidStateException("Package '$name' not found.");
@@ -122,7 +122,7 @@ class ResourcesLoader extends \Nette\Object
 	protected function getTypeTags(array $files, $type)
 	{
 		$tags = '';
-		$compile = [];
+		$compile = array();
 		foreach ($files as $file) {
 			if (\Nette\Utils\Strings::startsWith($file, '/')
 				|| \Nette\Utils\Strings::startsWith($file, 'http://')
@@ -137,7 +137,7 @@ class ResourcesLoader extends \Nette\Object
 				$tags .= $this->createTag($this->compiler->getCompiledFile($compile, $type), $type);
 			} else {
 				foreach ($compile as $file) {
-					$tags .= $this->createTag($this->compiler->getCompiledFile([ $file ], $type), $type);
+					$tags .= $this->createTag($this->compiler->getCompiledFile(array($file), $type), $type);
 				}
 			}
 		}
