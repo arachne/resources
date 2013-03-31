@@ -57,7 +57,8 @@ class ResourcesLoader extends \Nette\Object
 			}
 			$pos = strrpos($action, ':');
 			if ($pos === FALSE) {
-				return array();
+				$packages = isset($this->mapping['*']) ? (array) $this->mapping['*'] : array();
+				break;
 			}
 			$action = substr($action, 0, $pos);
 		} while (TRUE);
