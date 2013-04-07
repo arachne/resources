@@ -82,7 +82,7 @@ class ResourcesExtension extends \Nette\Config\CompilerExtension
 		$builder = $this->getContainerBuilder();
 		foreach ($this->filters as $service) {
 			$class = $builder->getDefinition($service)->class ?: $builder->getDefinition($service)->factory->entity;
-			if (!is_subclass_of($class, 'Arachne\Resources\IFilter')) {
+			if (!in_array('Arachne\Resources\IFilter', class_implements($class))) {
 				throw new InvalidStateException("Service '$service' must implement Arachne\Resources\IFilter.");
 			}
 		}
