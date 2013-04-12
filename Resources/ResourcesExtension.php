@@ -26,6 +26,10 @@ class ResourcesExtension extends \Nette\Config\CompilerExtension
 		'jsFilters' => array(),
 		'packages' => array(),
 		'mapping' => array(),
+                'wwwDir' => FALSE,
+                'originalMaxWidth' => NULL,
+                'originalMaxHeight' => NULL,
+                'linkClass' => NULL,
 	);
 
 	/** @var string[] */
@@ -48,10 +52,20 @@ class ResourcesExtension extends \Nette\Config\CompilerExtension
 
 		$builder->addDefinition($this->prefix('cache'))
 			->setClass('Arachne\Resources\PublicCache', array($config['cacheDirectory'], $config['cacheUrl']));
+                
+                $builder->addDefinition($this->prefix('thumbnailer'))
+                        ->setClass('Arachne\Resources\Thumbnailer', array(
+                            $config['wwwDir'],
+                            $config['originalMaxWidth'],
+                            $config['originalMaxHeight'],
+                            $config['linkClass']
+                        ));
 
 		if ($builder->hasDefinition('nette.latte')) {
 			$builder->getDefinition('nette.latte')
 				->addSetup('Arachne\Resources\ResourcesMacros::install(?->getCompiler())', array('@self'));
+                        $builder->getDefinition('nette.latte')
+                                ->addSetup('Arachne\Resources\ThumbMacro::install(?->getCompiler())', array('@self'));
 		}
 	}
 
