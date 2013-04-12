@@ -26,10 +26,11 @@ class ResourcesExtension extends \Nette\Config\CompilerExtension
 		'jsFilters' => array(),
 		'packages' => array(),
 		'mapping' => array(),
-                'wwwDir' => FALSE,
-                'originalMaxWidth' => NULL,
-                'originalMaxHeight' => NULL,
-                'linkClass' => NULL,
+		'imagesDir' => NULL,
+		'maxWidth' => NULL,
+		'maxHeight' => NULL,
+		'linkClass' => NULL,
+		'imageClass' => NULL,
 	);
 
 	/** @var string[] */
@@ -42,30 +43,29 @@ class ResourcesExtension extends \Nette\Config\CompilerExtension
 		$this->filters = array();
 
 		$builder->addDefinition($this->prefix('loader'))
-			->setClass('Arachne\Resources\ResourcesLoader', array($config['packages'], $config['mapping']))
-			->addSetup('setConcatenate', array($config['concatenate']));
+				->setClass('Arachne\Resources\ResourcesLoader', array($config['packages'], $config['mapping']))
+				->addSetup('setConcatenate', array($config['concatenate']));
 
 		$builder->addDefinition($this->prefix('compiler'))
-			->setClass('Arachne\Resources\Compiler', array($config['inputDirectory']))
-			->addSetup('setCssFilters', array($this->prepareFilterServices($config['cssFilters'])))
-			->addSetup('setJsFilters', array($this->prepareFilterServices($config['jsFilters'])));
+				->setClass('Arachne\Resources\Compiler', array($config['inputDirectory']))
+				->addSetup('setCssFilters', array($this->prepareFilterServices($config['cssFilters'])))
+				->addSetup('setJsFilters', array($this->prepareFilterServices($config['jsFilters'])));
 
 		$builder->addDefinition($this->prefix('cache'))
-			->setClass('Arachne\Resources\PublicCache', array($config['cacheDirectory'], $config['cacheUrl']));
-                
-                $builder->addDefinition($this->prefix('thumbnailer'))
-                        ->setClass('Arachne\Resources\Thumbnailer', array(
-                            $config['wwwDir'],
-                            $config['originalMaxWidth'],
-                            $config['originalMaxHeight'],
-                            $config['linkClass']
-                        ));
+				->setClass('Arachne\Resources\PublicCache', array($config['cacheDirectory'], $config['cacheUrl']));
+
+		$builder->addDefinition($this->prefix('thumbnailer'))
+				->setClass('Arachne\Resources\Thumbnailer', array($config['imagesDir']))
+				->addSetup('setMaxWidth', array($config['maxWidth']))
+				->addSetup('setMaxHeight', array($config['maxHeight']))
+				->addSetup('setLinkClass', array($config['linkClass']))
+				->addSetup('setImageClass', array($config['imageClass']));
 
 		if ($builder->hasDefinition('nette.latte')) {
 			$builder->getDefinition('nette.latte')
-				->addSetup('Arachne\Resources\ResourcesMacros::install(?->getCompiler())', array('@self'));
-                        $builder->getDefinition('nette.latte')
-                                ->addSetup('Arachne\Resources\ThumbMacro::install(?->getCompiler())', array('@self'));
+					->addSetup('Arachne\Resources\ResourcesMacros::install(?->getCompiler())', array('@self'));
+			$builder->getDefinition('nette.latte')
+					->addSetup('Arachne\Resources\ThumbMacro::install(?->getCompiler())', array('@self'));
 		}
 	}
 
@@ -84,7 +84,7 @@ class ResourcesExtension extends \Nette\Config\CompilerExtension
 				$class = $value;
 				$value = $this->prefix('filters.' . str_replace('\\', '.', $value));
 				$builder->addDefinition($value)
-					->setClass($class);
+						->setClass($class);
 			}
 			$this->filters[] = $value;
 		}
@@ -95,7 +95,7 @@ class ResourcesExtension extends \Nette\Config\CompilerExtension
 	{
 		$builder = $this->getContainerBuilder();
 		foreach ($this->filters as $service) {
-			$class = $builder->getDefinition($service)->class ?: $builder->getDefinition($service)->factory->entity;
+			$class = $builder->getDefinition($service)->class ? : $builder->getDefinition($service)->factory->entity;
 			if (!in_array('Arachne\Resources\IFilter', class_implements($class))) {
 				throw new InvalidStateException("Service '$service' must implement Arachne\Resources\IFilter.");
 			}
