@@ -18,7 +18,7 @@ class ResourcesExtension extends \Nette\Config\CompilerExtension
 
 	/** @var array */
 	public $defaults = array(
-		'inputDirectory' => NULL,
+		'resourcesDirectory' => NULL,
 		'cacheDirectory' => NULL,
 		'cacheUrl' => NULL,
 		'concatenate' => TRUE,
@@ -26,11 +26,11 @@ class ResourcesExtension extends \Nette\Config\CompilerExtension
 		'jsFilters' => array(),
 		'packages' => array(),
 		'mapping' => array(),
-		'imagesDir' => NULL,
+		'imagesDirectory' => NULL,
 		'maxWidth' => NULL,
 		'maxHeight' => NULL,
-		'linkClass' => NULL,
-		'imageClass' => NULL,
+		'linkAttributes' => array(),
+		'imageAttributes' => array(),
 	);
 
 	/** @var string[] */
@@ -47,19 +47,19 @@ class ResourcesExtension extends \Nette\Config\CompilerExtension
 				->addSetup('setConcatenate', array($config['concatenate']));
 
 		$builder->addDefinition($this->prefix('compiler'))
-				->setClass('Arachne\Resources\Compiler', array($config['inputDirectory']))
+				->setClass('Arachne\Resources\Compiler', array($config['resourcesDirectory']))
 				->addSetup('setCssFilters', array($this->prepareFilterServices($config['cssFilters'])))
 				->addSetup('setJsFilters', array($this->prepareFilterServices($config['jsFilters'])));
 
 		$builder->addDefinition($this->prefix('cache'))
 				->setClass('Arachne\Resources\PublicCache', array($config['cacheDirectory'], $config['cacheUrl']));
 
-		$builder->addDefinition($this->prefix('thumbnailer'))
-				->setClass('Arachne\Resources\Thumbnailer', array($config['imagesDir']))
-				->addSetup('setMaxWidth', array($config['maxWidth']))
-				->addSetup('setMaxHeight', array($config['maxHeight']))
-				->addSetup('setLinkClass', array($config['linkClass']))
-				->addSetup('setImageClass', array($config['imageClass']));
+		$servis = $builder->addDefinition($this->prefix('thumbnailer'));
+		$servis->setClass('Arachne\Resources\Thumbnailer', array($config['imagesDirectory']));
+		$servis->addSetup('setMaxWidth', array($config['maxWidth']));
+		$servis->addSetup('setMaxHeight', array($config['maxHeight']));
+		$servis->addSetup('setLinkAttributes', array($config['linkAttributes']));
+		$servis->addSetup('setImageAttributes', array($config['imageAttributes']));
 
 		if ($builder->hasDefinition('nette.latte')) {
 			$builder->getDefinition('nette.latte')
