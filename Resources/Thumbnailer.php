@@ -22,6 +22,7 @@ class Thumbnailer extends \Nette\Object
 
 	const IMAGE_ATTRIBUTES = 'imageAttributes';
 	const LINK_ATTRIBUTES = 'linkAttributes';
+	const FLAG = 'flag';
 
 	/** @var \Arachne\Resources\PublicCache */
 	private $cache;
@@ -41,6 +42,9 @@ class Thumbnailer extends \Nette\Object
 	/** @var int */
 	private $maxHeight;
 
+	/** @var int */
+	private $flag = Image::EXACT;
+
 	/**
 	 * @param string $imagesDirectory
 	 * @param \Arachne\Resources\PublicCache $cache
@@ -57,31 +61,21 @@ class Thumbnailer extends \Nette\Object
 	 */
 	public function getLinkThumbnail($input)
 	{
-		list($file, $width, $height, $type) = $this->prepareDimensions($input);
-		list($path, $modified) = $this->prepareVariables($file);
+		list($file, $modified, $path, $width, $height, $flag, $imageMacroAttributes, $linkMacroAttributes) = $this->prepareInput($input);
+		list($src, $imgWidth, $imgHeight) = $this->imageUrl($file, $modified, $path, $width, $height, $flag);
 
-		$imageAttributes = array('src' => $this->imageUrl($file, $modified, $type, $path, $width, $height));
-		$linkAttributes = array('href' => $this->largeImageUrl($file, $modified, $type, $path));
+		// Set image attributes
+		$imageAttributes = array(
+			'src' => $src,
+			'width' => $imgWidth,
+			'height' => $imgHeight,
+		);
+		$imageAttributes = array_merge($imageAttributes, $this->imageAttributes, $imageMacroAttributes);
 
-		// Add default image attributes
-		if (!empty($this->imageAttributes)) {
-			$imageAttributes = array_merge($imageAttributes, $this->imageAttributes);
-		}
+		// Set link attributes
+		$linkAttributes = array('href' => $this->largeImageUrl($file, $modified, $path));
+		$linkAttributes = array_merge($linkAttributes, $this->linkAttributes, $linkMacroAttributes);
 
-		// Add default link attributes
-		if (!empty($this->linkAttributes)) {
-			$linkAttributes = array_merge($linkAttributes, $this->linkAttributes);
-		}
-
-		// Add image and link attributes from macro
-		foreach ($input as $id => $value) {
-			if ($id == self::IMAGE_ATTRIBUTES) {
-				$imageAttributes = array_merge($imageAttributes, $value);
-			}
-			if ($id == self::LINK_ATTRIBUTES) {
-				$linkAttributes = array_merge($linkAttributes, $value);
-			}
-		}
 		return Html::el('a', $linkAttributes)->setHtml(Html::el('img', $imageAttributes));
 	}
 
@@ -91,20 +85,17 @@ class Thumbnailer extends \Nette\Object
 	 */
 	public function getThumbnail($input)
 	{
-		list($file, $width, $height, $type) = $this->prepareDimensions($input);
-		list($path, $modified) = $this->prepareVariables($file);
+		list($file, $modified, $path, $width, $height, $flag, $imageMacroAttributes) = $this->prepareInput($input);
+		list($src, $imgWidth, $imgHeight) = $this->imageUrl($file, $modified, $path, $width, $height, $flag);
 
-		$imageAttributes = array('src' => $this->imageUrl($file, $modified, $type, $path, $width, $height));
-		// Add default image attributes
-		if (!empty($this->imageAttributes)) {
-			$imageAttributes = array_merge($imageAttributes, $this->imageAttributes);
-		}
-		// Add image attributes from macro
-		foreach ($input as $id => $value) {
-			if ($id == self::IMAGE_ATTRIBUTES) {
-				$imageAttributes = array_merge($imageAttributes, $value);
-			}
-		}
+		// Set image attributes
+		$imageAttributes = array(
+			'src' => $src,
+			'width' => $imgWidth,
+			'height' => $imgHeight,
+		);
+		$imageAttributes = array_merge($imageAttributes, $this->imageAttributes, $imageMacroAttributes);
+
 		return Html::el('img', $imageAttributes);
 	}
 
@@ -114,47 +105,24 @@ class Thumbnailer extends \Nette\Object
 	 */
 	public function getThumbnailUrl($input)
 	{
-		list($file, $width, $height, $type) = $this->prepareDimensions($input);
-		list($path, $modified) = $this->prepareVariables($file);
-
-		$link = $this->imageUrl($file, $modified, $type, $path, $width, $height);
-		return $link;
+		list($file, $modified, $path, $width, $height, $flag) = $this->prepareInput($input);
+		list($src) = $this->imageUrl($file, $modified, $path, $width, $height, $flag);
+		return $src;
 	}
 
 	/**
+	 * 
 	 * @param array $input
 	 * @return array
 	 * @throws FileNotFoundException
 	 */
-	private function prepareDimensions(&$input)
+	private function prepareInput(&$input)
 	{
 		$file = $this->imagesDirectory . '/' . array_shift($input);
 		if (!is_file($file) || !is_readable($file)) {
-			throw new FileNotFoundException($file . ' not found');
+			throw new FileNotFoundException("File '$file' not found.");
 		}
 
-		$width = array_shift($input);
-		$height = array_shift($input);
-		// If not defined width and height from macro set size from origin file
-		if ($width === NULL && $height === NULL) {
-			list($width, $height, $type) = getimagesize($file);
-		} else {
-			list(,, $type) = getimagesize($file);
-		}
-		// If not defined default maxWidth and maxHeight set size from origin file
-		if ($this->maxWidth === NULL && $this->maxHeight === NULL) {
-			list($this->maxWidth, $this->maxHeight) = getimagesize($file);
-		}
-		return array($file, $width, $height, $type);
-	}
-
-	/**
-	 * @param string $file
-	 * @return array
-	 * @throws FileNotFoundException
-	 */
-	private function prepareVariables($file)
-	{
 		$modified = filemtime($file);
 		$path = pathinfo($file, PATHINFO_DIRNAME);
 
@@ -163,18 +131,47 @@ class Thumbnailer extends \Nette\Object
 		} else {
 			throw new FileNotFoundException("File '$file' not found.");
 		}
-		return array($path, $modified);
+
+		$width = array_shift($input);
+		$height = array_shift($input);
+
+		// Get flag from macro
+		if (isset($input[self::FLAG])) {
+			$flag = $input[self::FLAG];
+		} else {
+			$flag = $this->flag;
+		}
+
+		// Get image attributes from macro
+		$imageMacroAttributes = array();
+		if (isset($input[self::IMAGE_ATTRIBUTES])) {
+			$imageMacroAttributes = $input[self::IMAGE_ATTRIBUTES];
+		}
+
+		// Get link attributes from macro
+		$linkMacroAttributes = array();
+		if (isset($input[self::LINK_ATTRIBUTES])) {
+			$linkMacroAttributes = $input[self::LINK_ATTRIBUTES];
+		}
+
+		// If not defined default maxWidth and maxHeight set size from origin file
+		if ($this->maxWidth === NULL && $this->maxHeight === NULL) {
+			list($this->maxWidth, $this->maxHeight) = getimagesize($file);
+		}
+
+		return array($file, $modified, $path, $width, $height, $flag, $imageMacroAttributes, $linkMacroAttributes);
 	}
 
 	/**
 	 * @param string $file
 	 * @param int $modified
-	 * @param string $type
 	 * @param string $path
 	 * @return string
 	 */
-	private function largeImageUrl($file, $modified, $type, $path)
+	private function largeImageUrl($file, $modified, $path)
 	{
+		list(,, $type) = getimagesize($file);
+
 		$cacheKey = $path . '/' . pathinfo($file, PATHINFO_FILENAME) . '_' . $this->maxWidth . 'x' . $this->maxHeight;
 		$cacheFile = $this->cache->load($cacheKey, $modified, image_type_to_extension($type, FALSE));
 
@@ -190,33 +187,43 @@ class Thumbnailer extends \Nette\Object
 	}
 
 	/**
+	 * 
 	 * @param string $file
 	 * @param int $modified
-	 * @param string $type
 	 * @param string $path
 	 * @param int $width
 	 * @param int $height
-	 * @return string
+	 * @param int $flag
+	 * @return array
 	 */
-	private function imageUrl($file, $modified, $type, $path, $width, $height)
+	private function imageUrl($file, $modified, $path, $width, $height, $flag)
 	{
-		$cacheKey = $path . '/' . pathinfo($file, PATHINFO_FILENAME) . '_' . $width . 'x' . $height;
+		list($srcWidth, $srcHeight, $type) = getimagesize($file);
+
+		if ($width === NULL && $height === NULL) {
+			$width = $imgWidth = $srcWidth;
+			$height = $imgHeight = $srcHeight;
+		} else {
+			if ($flag === Image::EXACT) {
+				$imgWidth = $width;
+				$imgHeight = $height;
+			} else {
+				list($imgWidth, $imgHeight) = Image::calculateSize($srcWidth, $srcHeight, $width, $height, $flag);
+			}
+		}
+
+		$cacheKey = $path . '/' . pathinfo($file, PATHINFO_FILENAME) . '_' . $imgWidth . 'x' . $imgHeight . '-' . $flag;
 		$cacheFile = $this->cache->load($cacheKey, $modified, image_type_to_extension($type, FALSE));
 
 		if (!$cacheFile) {
 			$image = Image::fromFile($file);
-
-			if ($width !== NULL && $height !== NULL) {
-				$image->resize($width, $height, Image::EXACT);
-			} else {
-				$image->resize($width, $height, Image::SHRINK_ONLY);
-			}
-
+			$image->resize($width, $height, $flag);
 			$image->interlace();
-
 			$cacheFile = $this->cache->save($cacheKey, $image->toString($type), image_type_to_extension($type, FALSE));
 		}
-		return $this->formatUrl($path, $cacheFile, $modified);
+
+		$formatUrl = $this->formatUrl($path, $cacheFile, $modified);
+		return array($formatUrl, $imgWidth, $imgHeight);
 	}
 
 	/**
@@ -260,6 +267,14 @@ class Thumbnailer extends \Nette\Object
 	public function setImageAttributes($imageAttributes)
 	{
 		$this->imageAttributes = $imageAttributes;
+	}
+
+	/**
+	 * @param int $flag
+	 */
+	public function setFlag($flag)
+	{
+		$this->flag = $flag;
 	}
 
 }

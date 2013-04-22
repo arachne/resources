@@ -31,6 +31,7 @@ class ResourcesExtension extends \Nette\Config\CompilerExtension
 		'maxHeight' => NULL,
 		'linkAttributes' => array(),
 		'imageAttributes' => array(),
+		'flag' => NULL,
 	);
 
 	/** @var string[] */
@@ -54,12 +55,13 @@ class ResourcesExtension extends \Nette\Config\CompilerExtension
 		$builder->addDefinition($this->prefix('cache'))
 				->setClass('Arachne\Resources\PublicCache', array($config['cacheDirectory'], $config['cacheUrl']));
 
-		$servis = $builder->addDefinition($this->prefix('thumbnailer'));
-		$servis->setClass('Arachne\Resources\Thumbnailer', array($config['imagesDirectory']));
-		$servis->addSetup('setMaxWidth', array($config['maxWidth']));
-		$servis->addSetup('setMaxHeight', array($config['maxHeight']));
-		$servis->addSetup('setLinkAttributes', array($config['linkAttributes']));
-		$servis->addSetup('setImageAttributes', array($config['imageAttributes']));
+		$builder->addDefinition($this->prefix('thumbnailer'))
+				->setClass('Arachne\Resources\Thumbnailer', array($config['imagesDirectory']))
+				->addSetup('setMaxWidth', array($config['maxWidth']))
+				->addSetup('setMaxHeight', array($config['maxHeight']))
+				->addSetup('setLinkAttributes', array($config['linkAttributes']))
+				->addSetup('setImageAttributes', array($config['imageAttributes']))
+				->addSetup('setFlag', array($config['flag']));
 
 		if ($builder->hasDefinition('nette.latte')) {
 			$builder->getDefinition('nette.latte')
