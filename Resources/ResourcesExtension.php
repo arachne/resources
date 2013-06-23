@@ -13,7 +13,7 @@ namespace Arachne\Resources;
 /**
  * @author Jáchym Toušek
  */
-class ResourcesExtension extends \Nette\Config\CompilerExtension
+class ResourcesExtension extends \Nette\DI\CompilerExtension
 {
 
 	/** @var array */
