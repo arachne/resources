@@ -81,7 +81,7 @@ class Compiler extends \Nette\Object
 				}
 				foreach ($filters[$extension] as &$filter) {
 					if (is_string($filter)) {
-						$filter = $this->container->{$filter};
+						$filter = $this->container->getService($filter);
 					}
 					$input = $filter($input, $file);
 					$includedFiles = array_merge($includedFiles, $filter->getIncludedFiles());
