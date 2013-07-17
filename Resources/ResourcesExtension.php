@@ -21,7 +21,7 @@ class ResourcesExtension extends \Nette\DI\CompilerExtension
 		'resourcesDirectory' => NULL,
 		'cacheDirectory' => NULL,
 		'cacheUrl' => NULL,
-		'concatenate' => TRUE,
+		'concatenate' => '%productionMode%',
 		'cssFilters' => array(),
 		'jsFilters' => array(),
 		'packages' => array(),
