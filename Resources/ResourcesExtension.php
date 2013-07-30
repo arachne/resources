@@ -31,7 +31,7 @@ class ResourcesExtension extends \Nette\DI\CompilerExtension
 		'maxHeight' => NULL,
 		'linkAttributes' => array(),
 		'imageAttributes' => array(),
-		'flag' => NULL,
+		'flags' => NULL,
 	);
 
 	/** @var string[] */
@@ -61,7 +61,7 @@ class ResourcesExtension extends \Nette\DI\CompilerExtension
 				->addSetup('setMaxHeight', array($config['maxHeight']))
 				->addSetup('setLinkAttributes', array($config['linkAttributes']))
 				->addSetup('setImageAttributes', array($config['imageAttributes']))
-				->addSetup('setFlag', array($config['flag']));
+				->addSetup('setFlags', array($config['flags']));
 
 		if ($builder->hasDefinition('nette.latte')) {
 			$builder->getDefinition('nette.latte')

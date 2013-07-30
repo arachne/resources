@@ -11,7 +11,7 @@ use Nette\Utils\Html,
  *
  * @version    0.1
  * @package    Resources extenstion
- * 
+ *
  * @author Jáchym Toušek <enumag@gmail.com>
  * @author Dusan Hudak <admin@dusan-hudak.com>
  * @copyright (c) Jáchym Toušek (enumag@gmail.com)
@@ -19,10 +19,9 @@ use Nette\Utils\Html,
 class Thumbnailer extends \Nette\Object
 {
 	/** Tag of array keys for attributes in macro  */
-
 	const IMAGE_ATTRIBUTES = 'imageAttributes';
 	const LINK_ATTRIBUTES = 'linkAttributes';
-	const FLAG = 'flag';
+	const FLAGS = 'flags';
 
 	/** @var \Arachne\Resources\PublicCache */
 	private $cache;
@@ -43,7 +42,7 @@ class Thumbnailer extends \Nette\Object
 	private $maxHeight;
 
 	/** @var int */
-	private $flag = Image::EXACT;
+	private $flags = Image::EXACT;
 
 	/**
 	 * @param string $imagesDirectory
@@ -61,15 +60,10 @@ class Thumbnailer extends \Nette\Object
 	 */
 	public function getLinkThumbnail($input)
 	{
-		list($file, $modified, $path, $width, $height, $flag, $imageMacroAttributes, $linkMacroAttributes) = $this->prepareInput($input);
-		list($src, $imgWidth, $imgHeight) = $this->imageUrl($file, $modified, $path, $width, $height, $flag);
+		list($file, $modified, $path, $width, $height, $flags, $imageMacroAttributes, $linkMacroAttributes) = $this->prepareInput($input);
 
 		// Set image attributes
-		$imageAttributes = array(
-			'src' => $src,
-			'width' => $imgWidth,
-			'height' => $imgHeight,
-		);
+		$imageAttributes = $this->getImageAttributes($file, $modified, $path, $width, $height, $flags);
 		$imageAttributes = array_merge($imageAttributes, $this->imageAttributes, $imageMacroAttributes);
 
 		// Set link attributes
@@ -85,15 +79,10 @@ class Thumbnailer extends \Nette\Object
 	 */
 	public function getThumbnail($input)
 	{
-		list($file, $modified, $path, $width, $height, $flag, $imageMacroAttributes) = $this->prepareInput($input);
-		list($src, $imgWidth, $imgHeight) = $this->imageUrl($file, $modified, $path, $width, $height, $flag);
+		list($file, $modified, $path, $width, $height, $flags, $imageMacroAttributes) = $this->prepareInput($input);
 
 		// Set image attributes
-		$imageAttributes = array(
-			'src' => $src,
-			'width' => $imgWidth,
-			'height' => $imgHeight,
-		);
+		$imageAttributes = $this->getImageAttributes($file, $modified, $path, $width, $height, $flags);
 		$imageAttributes = array_merge($imageAttributes, $this->imageAttributes, $imageMacroAttributes);
 
 		return Html::el('img', $imageAttributes);
@@ -105,13 +94,14 @@ class Thumbnailer extends \Nette\Object
 	 */
 	public function getThumbnailUrl($input)
 	{
-		list($file, $modified, $path, $width, $height, $flag) = $this->prepareInput($input);
-		list($src) = $this->imageUrl($file, $modified, $path, $width, $height, $flag);
-		return $src;
+		list($file, $modified, $path, $width, $height, $flags) = $this->prepareInput($input);
+
+		// Set image attributes
+		$imageAttributes = $this->getImageAttributes($file, $modified, $path, $width, $height, $flags);
+		return $imageAttributes['src'];
 	}
 
 	/**
-	 * 
 	 * @param array $input
 	 * @return array
 	 * @throws FileNotFoundException
@@ -135,11 +125,11 @@ class Thumbnailer extends \Nette\Object
 		$width = array_shift($input);
 		$height = array_shift($input);
 
-		// Get flag from macro
-		if (isset($input[self::FLAG])) {
-			$flag = $input[self::FLAG];
+		// Get flags from macro
+		if (isset($input[self::FLAGS])) {
+			$flags = $input[self::FLAGS];
 		} else {
-			$flag = $this->flag;
+			$flags = $this->flags;
 		}
 
 		// Get image attributes from macro
@@ -159,7 +149,7 @@ class Thumbnailer extends \Nette\Object
 			list($this->maxWidth, $this->maxHeight) = getimagesize($file);
 		}
 
-		return array($file, $modified, $path, $width, $height, $flag, $imageMacroAttributes, $linkMacroAttributes);
+		return array($file, $modified, $path, $width, $height, $flags, $imageMacroAttributes, $linkMacroAttributes);
 	}
 
 	/**
@@ -187,43 +177,47 @@ class Thumbnailer extends \Nette\Object
 	}
 
 	/**
-	 * 
 	 * @param string $file
 	 * @param int $modified
 	 * @param string $path
 	 * @param int $width
 	 * @param int $height
-	 * @param int $flag
+	 * @param int $flags
 	 * @return array
 	 */
-	private function imageUrl($file, $modified, $path, $width, $height, $flag)
+	private function getImageAttributes($file, $modified, $path, $width, $height, $flags)
 	{
 		list($srcWidth, $srcHeight, $type) = getimagesize($file);
 
 		if ($width === NULL && $height === NULL) {
 			$width = $imgWidth = $srcWidth;
 			$height = $imgHeight = $srcHeight;
+		} else if ($flags === Image::EXACT && $width !== NULL && $height !== NULL) {
+			$imgWidth = $width;
+			$imgHeight = $height;
 		} else {
-			if ($flag === Image::EXACT) {
-				$imgWidth = $width;
-				$imgHeight = $height;
-			} else {
-				list($imgWidth, $imgHeight) = Image::calculateSize($srcWidth, $srcHeight, $width, $height, $flag);
-			}
+			list($calculateWidth, $calculateHeight) = Image::calculateSize($srcWidth, $srcHeight, $width, $height, $flags);
+			$width = $imgWidth = $calculateWidth;
+			$height = $imgHeight = $calculateHeight;
 		}
 
-		$cacheKey = $path . '/' . pathinfo($file, PATHINFO_FILENAME) . '_' . $imgWidth . 'x' . $imgHeight . '-' . $flag;
+		$cacheKey = $path . '/' . pathinfo($file, PATHINFO_FILENAME) . '_' . $imgWidth . 'x' . $imgHeight . '-' . $flags;
 		$cacheFile = $this->cache->load($cacheKey, $modified, image_type_to_extension($type, FALSE));
 
 		if (!$cacheFile) {
 			$image = Image::fromFile($file);
-			$image->resize($width, $height, $flag);
+			$image->resize($width, $height, $flags);
 			$image->interlace();
 			$cacheFile = $this->cache->save($cacheKey, $image->toString($type), image_type_to_extension($type, FALSE));
 		}
 
 		$formatUrl = $this->formatUrl($path, $cacheFile, $modified);
-		return array($formatUrl, $imgWidth, $imgHeight);
+		$imageAttributes = array(
+			'src' => $formatUrl,
+			'width' => $imgWidth,
+			'height' => $imgHeight,
+		);
+		return $imageAttributes;
 	}
 
 	/**
@@ -270,11 +264,13 @@ class Thumbnailer extends \Nette\Object
 	}
 
 	/**
-	 * @param int $flag
+	 * @param int $flags
 	 */
-	public function setFlag($flag)
+	public function setFlags($flags)
 	{
-		$this->flag = $flag;
+		if ($flags != NULL) {
+			$this->flags = $flags;
+		}
 	}
 
 }
