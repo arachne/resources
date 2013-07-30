@@ -17,7 +17,7 @@ class Compiler extends \Nette\Object
 {
 
 	/** @var string */
-	protected $inputDirectory;
+	protected $resourcesDirectory;
 
 	/** @var IFilter[] */
 	protected $cssFilters;
@@ -35,14 +35,14 @@ class Compiler extends \Nette\Object
 	protected $container;
 
 	/**
-	 * @param string $inputDirectory
+	 * @param string $resourcesDirectory
 	 * @param PublicCache $cache
 	 * @param \Nette\Caching\IStorage $storage
 	 * @param \Nette\DI\Container $container
 	 */
-	public function __construct($inputDirectory, PublicCache $public, \Nette\Caching\IStorage $storage, \Nette\DI\Container $container)
+	public function __construct($resourcesDirectory, PublicCache $public, \Nette\Caching\IStorage $storage, \Nette\DI\Container $container)
 	{
-		$this->inputDirectory = $inputDirectory;
+		$this->resourcesDirectory = $resourcesDirectory;
 		$this->public = $public;
 		$this->cache = new \Nette\Caching\Cache($storage, 'Arachne.Resources');
 		$this->container = $container;
@@ -69,7 +69,7 @@ class Compiler extends \Nette\Object
 		$includedFiles = array();
 		$filters = &$this->{$type . 'Filters'};
 		foreach ($files as $file) {
-			$file = $this->inputDirectory . '/' . $file;
+			$file = $this->resourcesDirectory . '/' . $file;
 			if (!is_readable($file)) {
 				throw new FileNotFoundException("File '$file' not found.");
 			}

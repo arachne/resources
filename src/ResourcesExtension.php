@@ -20,7 +20,7 @@ class ResourcesExtension extends \Nette\DI\CompilerExtension
 
 	/** @var array */
 	public $defaults = array(
-		'inputDirectory' => NULL,
+		'resourcesDirectory' => NULL,
 		'cacheDirectory' => NULL,
 		'cacheUrl' => NULL,
 		'concatenate' => '%productionMode%',
@@ -28,6 +28,12 @@ class ResourcesExtension extends \Nette\DI\CompilerExtension
 		'jsFilters' => array(),
 		'packages' => array(),
 		'mapping' => array(),
+		'imagesDirectory' => NULL,
+		'maxWidth' => NULL,
+		'maxHeight' => NULL,
+		'linkAttributes' => array(),
+		'imageAttributes' => array(),
+		'flags' => NULL,
 	);
 
 	/** @var string[] */
@@ -40,20 +46,29 @@ class ResourcesExtension extends \Nette\DI\CompilerExtension
 		$this->filters = array();
 
 		$builder->addDefinition($this->prefix('loader'))
-			->setClass('Arachne\Resources\ResourcesLoader', array($config['packages'], $config['mapping']))
-			->addSetup('setConcatenate', array($config['concatenate']));
+				->setClass('Arachne\Resources\ResourcesLoader', array($config['packages'], $config['mapping']))
+				->addSetup('setConcatenate', array($config['concatenate']));
 
 		$builder->addDefinition($this->prefix('compiler'))
-			->setClass('Arachne\Resources\Compiler', array($config['inputDirectory']))
-			->addSetup('setCssFilters', array($this->prepareFilterServices($config['cssFilters'])))
-			->addSetup('setJsFilters', array($this->prepareFilterServices($config['jsFilters'])));
+				->setClass('Arachne\Resources\Compiler', array($config['resourcesDirectory']))
+				->addSetup('setCssFilters', array($this->prepareFilterServices($config['cssFilters'])))
+				->addSetup('setJsFilters', array($this->prepareFilterServices($config['jsFilters'])));
 
 		$builder->addDefinition($this->prefix('cache'))
-			->setClass('Arachne\Resources\PublicCache', array($config['cacheDirectory'], $config['cacheUrl']));
+				->setClass('Arachne\Resources\PublicCache', array($config['cacheDirectory'], $config['cacheUrl']));
+
+		$builder->addDefinition($this->prefix('thumbnailer'))
+				->setClass('Arachne\Resources\Thumbnailer', array($config['imagesDirectory']))
+				->addSetup('setMaxWidth', array($config['maxWidth']))
+				->addSetup('setMaxHeight', array($config['maxHeight']))
+				->addSetup('setLinkAttributes', array($config['linkAttributes']))
+				->addSetup('setImageAttributes', array($config['imageAttributes']))
+				->addSetup('setFlags', array($config['flags']));
 
 		if ($builder->hasDefinition('nette.latteFactory')) {
 			$builder->getDefinition('nette.latteFactory')
-				->addSetup('?->onCompile[] = function($engine) { Arachne\Resources\ResourcesMacros::install($engine->getCompiler()); }', array('@self'));
+				->addSetup('?->onCompile[] = function($engine) { Arachne\Resources\ResourcesMacros::install($engine->getCompiler()); }', array('@self'))
+				->addSetup('?->onCompile[] = function($engine) { Arachne\Resources\ThumbnailerMacros::install($engine->getCompiler()); }', array('@self'));
 		}
 	}
 
@@ -72,7 +87,7 @@ class ResourcesExtension extends \Nette\DI\CompilerExtension
 				$class = $value;
 				$value = $this->prefix('filters.' . str_replace('\\', '.', $value));
 				$builder->addDefinition($value)
-					->setClass($class);
+						->setClass($class);
 			}
 			$this->filters[] = $value;
 		}
@@ -83,7 +98,7 @@ class ResourcesExtension extends \Nette\DI\CompilerExtension
 	{
 		$builder = $this->getContainerBuilder();
 		foreach ($this->filters as $service) {
-			$class = $builder->getDefinition($service)->class ?: $builder->getDefinition($service)->factory->entity;
+			$class = $builder->getDefinition($service)->class ? : $builder->getDefinition($service)->factory->entity;
 			if (!in_array('Arachne\Resources\IFilter', class_implements($class))) {
 				throw new InvalidStateException("Service '$service' must implement Arachne\Resources\IFilter.");
 			}
