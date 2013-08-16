@@ -140,7 +140,7 @@ class Compiler extends \Nette\Object
 			if (is_file($file)) {
 				$modified = max($modified, filemtime($file));
 			} else {
-				$modified = time();
+				throw new FileNotFoundException("File '$file' was not found. Make sure that your filter's getIncludedFiles() method returns complete paths.");
 			}
 		}
 		return $modified;
