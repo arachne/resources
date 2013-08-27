@@ -17,7 +17,6 @@ class ResourcesMacros extends \Nette\Latte\Macros\MacroSet
 {
 
 	/**
-	 * @static
 	 * @param \Nette\Latte\Compiler $compiler
 	 */
 	public static function install(\Nette\Latte\Compiler $compiler)
