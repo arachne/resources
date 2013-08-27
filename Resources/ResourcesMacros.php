@@ -22,7 +22,7 @@ class ResourcesMacros extends \Nette\Latte\Macros\MacroSet
 	public static function install(\Nette\Latte\Compiler $compiler)
 	{
 		$me = parent::install($compiler);
-		$me->addMacro('resources', 'echo $_presenter->getContext()->getByType("Arachne\Resources\ResourcesLoader")->getTags($_presenter->getAction(TRUE), %node.word)');
+		$me->addMacro('resources', 'echo $_presenter->getContext()->getByType("Arachne\Resources\ResourcesLoader")->getTags(":" . $_presenter->getName() . ":" . $_presenter->getView(), %node.word)');
 	}
 
 }
