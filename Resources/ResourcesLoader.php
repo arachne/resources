@@ -110,7 +110,13 @@ class ResourcesLoader extends \Nette\Object
 				throw new InvalidStateException("Package '$name' not found.");
 			}
 			foreach ($this->packages[$name] as $value) {
-				$files[$this->compiler->detectType($value)][] = $value;
+				if (is_string($value)) {
+					$files[$this->compiler->detectType($value)][] = $value;
+				} elseif (isset($value['file'], $value['type']) && ($value['type'] === 'css' || $value['type'] === 'js')) {
+					$files[$value['type']][] = $value['file'];
+				} else {
+					throw new InvalidStateException("File must be either a string or array with correct values.");
+				}
 			}
 		}
 		return $files;
