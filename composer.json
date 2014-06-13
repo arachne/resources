@@ -18,10 +18,9 @@
 		"nette/di": "~2.2.0"
 	},
 	"autoload": {
-        "classmap": [ "Arachne/Resources/exceptions.php" ],
-		"psr-0": {
-			"Arachne\\Resources": ""
+        "classmap": [ "src/exceptions.php" ],
+		"psr-4": {
+			"Arachne\\Resources\\": "src"
 		}
-	},
-	"target-dir": "Arachne"
+	}
 }
