@@ -51,9 +51,9 @@ class ResourcesExtension extends \Nette\DI\CompilerExtension
 		$builder->addDefinition($this->prefix('cache'))
 			->setClass('Arachne\Resources\PublicCache', array($config['cacheDirectory'], $config['cacheUrl']));
 
-		if ($builder->hasDefinition('nette.latte')) {
-			$builder->getDefinition('nette.latte')
-				->addSetup('Arachne\Resources\ResourcesMacros::install(?->getCompiler())', array('@self'));
+		if ($builder->hasDefinition('nette.latteFactory')) {
+			$builder->getDefinition('nette.latteFactory')
+				->addSetup('?->onCompile[] = function($engine) { Arachne\Resources\ResourcesMacros::install($engine->getCompiler()); }', array('@self'));
 		}
 	}
 

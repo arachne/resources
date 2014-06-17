@@ -13,15 +13,15 @@ namespace Arachne\Resources;
 /**
  * @author Jáchym Toušek
  */
-class ResourcesMacros extends \Nette\Latte\Macros\MacroSet
+class ResourcesMacros extends \Latte\Macros\MacroSet
 {
 
 	/**
-	 * @param \Nette\Latte\Compiler $compiler
+	 * @param \Latte\Compiler $compiler
 	 */
-	public static function install(\Nette\Latte\Compiler $compiler)
+	public static function install(\Latte\Compiler $compiler)
 	{
-		$me = parent::install($compiler);
+		$me = new static($compiler);
 		$me->addMacro('resources', 'echo $_presenter->getContext()->getByType("Arachne\Resources\ResourcesLoader")->getTags(":" . $_presenter->getName() . ":" . $_presenter->getView(), %node.word)');
 	}
 
