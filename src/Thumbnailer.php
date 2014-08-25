@@ -11,8 +11,8 @@
 namespace Arachne\Resources;
 
 use Nette\Utils\Html;
+use Nette\Utils\Image;
 use Nette\Utils\Strings;
-use Nette\Image;
 
 /**
  * @author Jáchym Toušek <enumag@gmail.com>
