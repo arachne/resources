@@ -62,7 +62,11 @@ class Thumbnailer extends \Nette\Object
 	 */
 	public function getLinkThumbnail($input)
 	{
-		list($file, $modified, $path, $width, $height, $flags, $imageMacroAttributes, $linkMacroAttributes) = $this->prepareInput($input);
+		try {
+			list($file, $modified, $path, $width, $height, $flags, $imageMacroAttributes, $linkMacroAttributes) = $this->prepareInput($input);
+		} catch (FileNotFoundException $e) {
+			return Html::el('span', [ 'class' => 'no-image' ]);
+		}
 
 		// Set image attributes
 		$imageAttributes = $this->getImageAttributes($file, $modified, $path, $width, $height, $flags);
@@ -81,7 +85,11 @@ class Thumbnailer extends \Nette\Object
 	 */
 	public function getThumbnail($input)
 	{
-		list($file, $modified, $path, $width, $height, $flags, $imageMacroAttributes) = $this->prepareInput($input);
+		try {
+			list($file, $modified, $path, $width, $height, $flags, $imageMacroAttributes) = $this->prepareInput($input);
+		} catch (FileNotFoundException $e) {
+			return Html::el('span', [ 'class' => 'no-image' ]);
+		}
 
 		// Set image attributes
 		$imageAttributes = $this->getImageAttributes($file, $modified, $path, $width, $height, $flags);
@@ -96,7 +104,11 @@ class Thumbnailer extends \Nette\Object
 	 */
 	public function getThumbnailUrl($input)
 	{
-		list($file, $modified, $path, $width, $height, $flags) = $this->prepareInput($input);
+		try {
+			list($file, $modified, $path, $width, $height, $flags) = $this->prepareInput($input);
+		} catch (FileNotFoundException $e) {
+			return;
+		}
 
 		// Set image attributes
 		$imageAttributes = $this->getImageAttributes($file, $modified, $path, $width, $height, $flags);
