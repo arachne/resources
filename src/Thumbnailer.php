@@ -242,7 +242,8 @@ class Thumbnailer extends \Nette\Object
 	 */
 	private function formatUrl($path, $cacheFile, $modified)
 	{
-		return $this->cache->getUrl() . '/' . str_replace('\\', '/', $path) . '/' . pathinfo($cacheFile, PATHINFO_BASENAME) . '?' . $modified;
+		$path = str_replace('\\', '/', $path);
+		return $this->cache->getUrl() . (substr($path, 0, 1) === '/' ? '' : '/') . $path . '/' . pathinfo($cacheFile, PATHINFO_BASENAME) . '?' . $modified;
 	}
 
 	/**
